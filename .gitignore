@@ -1,0 +1,8 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserdata
+*.xcworkspace/xcuserdata/
+
+# Seed data (contains personal portfolio)
+FinTrackShmeck/seed_data.json
