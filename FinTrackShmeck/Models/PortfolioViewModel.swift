@@ -16,6 +16,7 @@ class PortfolioViewModel {
     }
 
     private var refreshTask: Task<Void, Never>?
+    private var autoRefreshTimer: Timer?
 
     private static var savedURL: URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -29,6 +30,19 @@ class PortfolioViewModel {
         ) { [weak self] notification in
             self?.handlePriceAlert(notification.userInfo)
         }
+        startAutoRefresh()
+    }
+
+    func startAutoRefresh() {
+        autoRefreshTimer?.invalidate()
+        autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+            self?.refreshPrices()
+        }
+    }
+
+    func stopAutoRefresh() {
+        autoRefreshTimer?.invalidate()
+        autoRefreshTimer = nil
     }
 
     private func handlePriceAlert(_ userInfo: [AnyHashable: Any]?) {
@@ -66,6 +80,11 @@ class PortfolioViewModel {
         if !ticker.isEmpty {
             FirebaseService.shared.removeAlert(ticker: ticker)
         }
+    }
+
+    func deletePosition(id: UUID) {
+        guard let index = positions.firstIndex(where: { $0.id == id }) else { return }
+        deletePosition(at: index)
     }
 
     func onEdit() {

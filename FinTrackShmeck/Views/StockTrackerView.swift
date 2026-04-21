@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StockTrackerView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = PortfolioViewModel()
 
     private var theme: AppTheme {
@@ -14,6 +15,7 @@ struct StockTrackerView: View {
     private let rowHeight: CGFloat = 48
     private let headerHeight: CGFloat = 32
     @State private var hOffset: CGFloat = 0
+    @State private var scrollToID: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,6 +25,14 @@ struct StockTrackerView: View {
         .background(theme.background)
         .scrollDismissesKeyboard(.interactively)
         .onAppear { viewModel.refreshPrices() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                viewModel.refreshPrices()
+                viewModel.startAutoRefresh()
+            } else {
+                viewModel.stopAutoRefresh()
+            }
+        }
         .alert("Invalid Ticker", isPresented: Binding(
             get: { viewModel.tickerError != nil },
             set: { if !$0 { viewModel.dismissTickerError() } }
@@ -37,7 +47,7 @@ struct StockTrackerView: View {
 
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("PORTFOLIO · \(viewModel.positions.count) positions")
+            Text("PORTFOLIO · \(viewModel.positions.filter { $0.shares > 0 }.count) positions")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(theme.muted)
                 .tracking(0.4)
@@ -89,17 +99,21 @@ struct StockTrackerView: View {
             }
 
             // Vertically scrollable content
+            ScrollViewReader { proxy in
             ScrollView(.vertical) {
                 HStack(alignment: .top, spacing: 0) {
                     // Ticker column
                     VStack(spacing: 0) {
-                        ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
-                            stickyTickerDataCell(index: index)
-                                .modifier(BlinkModifier(
-                                    alertInfo: viewModel.triggeredAlerts[viewModel.positions[index].ticker],
-                                    positiveColor: theme.positive,
-                                    negativeColor: theme.negative
-                                ))
+                        ForEach(viewModel.positions) { pos in
+                            if let index = viewModel.positions.firstIndex(where: { $0.id == pos.id }) {
+                                stickyTickerDataCell(index: index)
+                                    .modifier(BlinkModifier(
+                                        alertInfo: viewModel.triggeredAlerts[pos.ticker],
+                                        positiveColor: theme.positive,
+                                        negativeColor: theme.negative
+                                    ))
+                                    .id(pos.id)
+                            }
                         }
                         if !viewModel.hasEmptyTicker {
                             newRowTickerCell
@@ -111,8 +125,10 @@ struct StockTrackerView: View {
                     // Horizontally scrollable columns
                     ObservableHScrollView(offset: $hOffset) {
                         VStack(spacing: 0) {
-                            ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
-                                scrollableDataRow(index: index)
+                            ForEach(viewModel.positions) { pos in
+                                if let index = viewModel.positions.firstIndex(where: { $0.id == pos.id }) {
+                                    scrollableDataRow(index: index)
+                                }
                             }
                             if !viewModel.hasEmptyTicker {
                                 newRowEmptyCells
@@ -120,6 +136,15 @@ struct StockTrackerView: View {
                         }
                     }
                 }
+            }
+            .onChange(of: scrollToID) { _, id in
+                if let id {
+                    withAnimation {
+                        proxy.scrollTo(id, anchor: .center)
+                    }
+                    scrollToID = nil
+                }
+            }
             }
         }
         .background(theme.surface)
@@ -137,23 +162,28 @@ struct StockTrackerView: View {
     // MARK: - Sticky Ticker Data Cell
 
     private func stickyTickerDataCell(index: Int) -> some View {
-        TickerCell(
+        let posID = viewModel.positions[index].id
+        return TickerCell(
             ticker: viewModel.positions[index].ticker,
             name: viewModel.positions[index].name,
             theme: theme,
             width: tickerWidth,
-            shouldFocus: viewModel.focusedTickerID == viewModel.positions[index].id,
+            shouldFocus: viewModel.focusedTickerID == posID,
             onTickerChange: {
+                guard let i = viewModel.positions.firstIndex(where: { $0.id == posID }) else { return }
                 let newTicker = $0.trimmingCharacters(in: .whitespaces).uppercased()
                 if newTicker.isEmpty {
-                    viewModel.deletePosition(at: index)
+                    viewModel.deletePosition(id: posID)
                 } else {
-                    viewModel.positions[index].ticker = newTicker
-                    viewModel.validateAndRefreshTicker(at: index)
+                    viewModel.positions[i].ticker = newTicker
+                    viewModel.validateAndRefreshTicker(at: i)
                 }
             },
-            onNameChange: { viewModel.positions[index].name = $0 },
-            onDelete: { viewModel.deletePosition(at: index) },
+            onNameChange: {
+                guard let i = viewModel.positions.firstIndex(where: { $0.id == posID }) else { return }
+                viewModel.positions[i].name = $0
+            },
+            onDelete: { viewModel.deletePosition(id: posID) },
             onFocusHandled: { viewModel.focusedTickerID = nil }
         )
     }
@@ -198,10 +228,12 @@ struct StockTrackerView: View {
 
     private func scrollableDataRow(index: Int) -> some View {
         let pos = viewModel.positions[index]
+        let posID = pos.id
         let value = pos.price * pos.shares
         let dayGL = (pos.price - pos.previousClose) * pos.shares
         let dayColor = dayGL >= 0 ? theme.positive : theme.negative
         let dayText = "\(dayGL >= 0 ? "+" : "-")$\(formatMoney(abs(dayGL)))"
+        let editStart = { scrollToID = posID }
 
         return HStack(spacing: 0) {
             divider()
@@ -209,7 +241,7 @@ struct StockTrackerView: View {
                 value: "$" + String(format: "%.2f", pos.price),
                 onCommit: { viewModel.positions[index].price = Double($0.replacingOccurrences(of: "$", with: "")) ?? 0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.text,
-                width: colWidths[0], theme: theme
+                width: colWidths[0], theme: theme, numericOnly: true, onEditStart: editStart
             )
 
             divider()
@@ -217,7 +249,7 @@ struct StockTrackerView: View {
                 value: String(format: "%.2f", pos.shares),
                 onCommit: { viewModel.positions[index].shares = Double($0) ?? 0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.text,
-                width: colWidths[1], theme: theme
+                width: colWidths[1], theme: theme, numericOnly: true, onEditStart: editStart
             )
 
             divider()
@@ -231,7 +263,7 @@ struct StockTrackerView: View {
                 value: pos.field,
                 onCommit: { viewModel.positions[index].field = $0; viewModel.onEdit() },
                 alignment: .center, color: theme.muted,
-                width: colWidths[4], theme: theme
+                width: colWidths[4], theme: theme, onEditStart: editStart
             )
 
             divider()
@@ -239,7 +271,7 @@ struct StockTrackerView: View {
                 value: pos.aum,
                 onCommit: { viewModel.positions[index].aum = $0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.muted,
-                placeholder: "—", width: colWidths[5], theme: theme
+                placeholder: "—", width: colWidths[5], theme: theme, onEditStart: editStart
             )
 
             divider()
@@ -247,7 +279,7 @@ struct StockTrackerView: View {
                 value: pos.mcap,
                 onCommit: { viewModel.positions[index].mcap = $0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.text,
-                width: colWidths[6], theme: theme
+                width: colWidths[6], theme: theme, onEditStart: editStart
             )
 
             divider()
@@ -259,7 +291,7 @@ struct StockTrackerView: View {
                     viewModel.onEdit()
                 },
                 alignment: .center, isMono: true, color: theme.positive,
-                placeholder: "—", width: colWidths[7], theme: theme
+                placeholder: "—", width: colWidths[7], theme: theme, numericOnly: true, onEditStart: editStart
             )
 
             divider()
@@ -271,7 +303,7 @@ struct StockTrackerView: View {
                     viewModel.onEdit()
                 },
                 alignment: .center, isMono: true, color: theme.negative,
-                placeholder: "—", width: colWidths[8], theme: theme
+                placeholder: "—", width: colWidths[8], theme: theme, numericOnly: true, onEditStart: editStart
             )
         }
         .frame(height: rowHeight)

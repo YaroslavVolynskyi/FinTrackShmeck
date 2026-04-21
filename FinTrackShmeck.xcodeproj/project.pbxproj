@@ -172,7 +172,7 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					D4732A119360676C0A7CFF51 = {
-						DevelopmentTeam = REDACTED_TEAM_ID;
+						DevelopmentTeam = VJ88ZRXH99;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -245,7 +245,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"FinTrackShmeck/Preview Content\"";
-				DEVELOPMENT_TEAM = REDACTED_TEAM_ID;
+				DEVELOPMENT_TEAM = VJ88ZRXH99;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -392,7 +392,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"FinTrackShmeck/Preview Content\"";
-				DEVELOPMENT_TEAM = REDACTED_TEAM_ID;
+				DEVELOPMENT_TEAM = VJ88ZRXH99;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

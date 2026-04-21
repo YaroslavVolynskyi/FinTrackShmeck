@@ -10,6 +10,8 @@ struct EditableCellView: View {
     var placeholder: String = "—"
     var width: CGFloat = 80
     var theme: AppTheme = .light
+    var numericOnly: Bool = false
+    var onEditStart: (() -> Void)? = nil
 
     @State private var isEditing = false
     @State private var draft = ""
@@ -25,6 +27,12 @@ struct EditableCellView: View {
                     .foregroundColor(color)
                     .multilineTextAlignment(alignment)
                     .textFieldStyle(.plain)
+                    .keyboardType(numericOnly ? .decimalPad : .default)
+                    .onChange(of: draft) { _, newValue in
+                        if numericOnly {
+                            draft = newValue.filter { $0.isNumber || $0 == "." || $0 == "$" }
+                        }
+                    }
                     .onSubmit {
                         commitEdit()
                     }
@@ -49,11 +57,24 @@ struct EditableCellView: View {
             RoundedRectangle(cornerRadius: 4)
                 .stroke(isEditing ? theme.border : .clear, lineWidth: 1.5)
         )
+        .toolbar {
+            if isEditing && numericOnly {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        commitEdit()
+                    }
+                }
+            }
+        }
         .contentShape(Rectangle())
         .onTapGesture {
             draft = value
             isEditing = true
-            isFocused = true
+            onEditStart?()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isFocused = true
+            }
         }
     }
 
