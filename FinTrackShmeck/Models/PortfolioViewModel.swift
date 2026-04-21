@@ -9,6 +9,10 @@ class PortfolioViewModel {
     var focusedTickerID: UUID?
     private var errorTickerID: UUID?
 
+    var hasEmptyTicker: Bool {
+        positions.contains { $0.ticker.isEmpty }
+    }
+
     private var refreshTask: Task<Void, Never>?
 
     var totalValue: Double {
@@ -36,6 +40,15 @@ class PortfolioViewModel {
         scheduleRefresh()
     }
 
+    func sortByValue() {
+        let sorted = positions.sorted { ($0.price * $0.shares) > ($1.price * $1.shares) }
+        if sorted.map(\.id) != positions.map(\.id) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                positions = sorted
+            }
+        }
+    }
+
     func validateAndRefreshTicker(at index: Int) {
         guard positions.indices.contains(index) else { return }
         let ticker = positions[index].ticker
@@ -46,7 +59,7 @@ class PortfolioViewModel {
             let quotes = await StockService.shared.fetchQuotes(for: [ticker])
             if let quote = quotes[ticker] {
                 applyQuote(quote, at: index)
-                // Refresh all other tickers too
+
                 await fetchAllPrices()
             } else {
                 errorTickerID = positions[index].id
@@ -92,6 +105,7 @@ class PortfolioViewModel {
             guard let quote = quotes[positions[i].ticker] else { continue }
             applyQuote(quote, at: i)
         }
+        sortByValue()
     }
 
     private func applyQuote(_ quote: StockQuote, at index: Int) {

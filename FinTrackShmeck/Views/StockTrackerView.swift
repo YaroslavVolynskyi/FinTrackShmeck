@@ -16,9 +16,9 @@ struct StockTrackerView: View {
         VStack(spacing: 0) {
             headerView
             tableCard
-            Spacer().frame(height: 34)
         }
         .background(theme.background)
+        .scrollDismissesKeyboard(.interactively)
         .onAppear { viewModel.refreshPrices() }
         .alert("Invalid Ticker", isPresented: Binding(
             get: { viewModel.tickerError != nil },
@@ -67,7 +67,6 @@ struct StockTrackerView: View {
     private var tableCard: some View {
         ScrollView(.vertical) {
             tableContent
-            addButton
         }
         .background(theme.surface)
         .overlay(alignment: .top) {
@@ -91,6 +90,9 @@ struct StockTrackerView: View {
                     ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
                         stickyTickerDataCell(index: index)
                     }
+                    if !viewModel.hasEmptyTicker {
+                        newRowTickerCell
+                    }
                 }
             }
             .frame(width: tickerWidth)
@@ -106,6 +108,9 @@ struct StockTrackerView: View {
                         ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
                             scrollableDataRow(index: index)
                         }
+                        if !viewModel.hasEmptyTicker {
+                            newRowEmptyCells
+                        }
                     }
                 }
             }
@@ -116,9 +121,7 @@ struct StockTrackerView: View {
 
     private func stickyHeaderCell(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 10, weight: .semibold))
-            .tracking(0.8)
-            .textCase(.uppercase)
+            .font(.system(size: 13, weight: .semibold, design: .monospaced))
             .foregroundColor(theme.faint)
             .frame(width: tickerWidth, height: 32)
     }
@@ -133,8 +136,10 @@ struct StockTrackerView: View {
             width: tickerWidth,
             shouldFocus: viewModel.focusedTickerID == viewModel.positions[index].id,
             onTickerChange: {
+                let oldTicker = viewModel.positions[index].ticker
                 let newTicker = $0.trimmingCharacters(in: .whitespaces).uppercased()
                 if newTicker.isEmpty {
+                    // Empty submit — delete row (NEW will reappear)
                     viewModel.deletePosition(at: index)
                 } else {
                     viewModel.positions[index].ticker = newTicker
@@ -174,9 +179,7 @@ struct StockTrackerView: View {
 
     private func headerCell(_ title: String, width: CGFloat) -> some View {
         Text(title)
-            .font(.system(size: 10, weight: .semibold))
-            .tracking(0.8)
-            .textCase(.uppercase)
+            .font(.system(size: 13, weight: .semibold, design: .monospaced))
             .foregroundColor(theme.faint)
             .frame(width: width, height: 32)
     }
@@ -255,20 +258,40 @@ struct StockTrackerView: View {
             .frame(width: width, height: 48)
     }
 
-    // MARK: - Add Button
+    // MARK: - New Row Empty Cells (scrollable side)
 
-    private var addButton: some View {
-        Button(action: { viewModel.addPosition() }) {
-            HStack(spacing: 10) {
-                Image(systemName: "plus.circle")
-                    .font(.system(size: 14))
-                Text("Add position")
-                    .font(.system(size: 13, weight: .medium))
+    private var newRowEmptyCells: some View {
+        HStack(spacing: 0) {
+            ForEach(0..<colWidths.count, id: \.self) { i in
+                divider()
+                Color.clear.frame(width: colWidths[i], height: 48)
             }
-            .foregroundColor(theme.accent)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(height: 48)
+        .background(theme.surface)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(theme.border).frame(height: 0.5)
+        }
+    }
+
+    // MARK: - New Row Ticker Cell
+
+    private var newRowTickerCell: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "plus")
+                .font(.system(size: 11, weight: .semibold))
+            Text("NEW")
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+        }
+        .foregroundColor(theme.accent)
+        .frame(width: tickerWidth, height: 48)
+        .background(theme.surfaceTinted)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(theme.border).frame(height: 0.5)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            viewModel.addPosition()
         }
     }
 
