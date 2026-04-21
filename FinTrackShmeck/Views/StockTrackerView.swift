@@ -49,7 +49,7 @@ struct StockTrackerView: View {
 
                 HStack(spacing: 4) {
                     let pl = viewModel.dailyPL
-                    Text("\(pl >= 0 ? "+" : "")$\(formatMoney(abs(pl)))")
+                    Text("\(pl >= 0 ? "+" : "-")$\(formatMoney(abs(pl)))")
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
                         .foregroundColor(pl >= 0 ? theme.positive : theme.negative)
                     Text("today")
@@ -65,56 +65,50 @@ struct StockTrackerView: View {
     // MARK: - Table Card
 
     private var tableCard: some View {
-        ScrollView(.vertical) {
-            tableContent
-        }
-        .background(theme.surface)
-        .overlay(alignment: .top) {
-            Rectangle().fill(theme.border).frame(height: 0.5)
-        }
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(theme.border).frame(height: 0.5)
-        }
-    }
-
-    // MARK: - Table Content (sticky ticker column + scrollable rest)
-
-    private var tableContent: some View {
         HStack(alignment: .top, spacing: 0) {
-            // Sticky ticker column with pinned header
-            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                Section(header:
-                    stickyHeaderCell("Ticker")
-                        .background(theme.surfaceTinted)
-                ) {
-                    ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
-                        stickyTickerDataCell(index: index)
-                    }
-                    if !viewModel.hasEmptyTicker {
-                        newRowTickerCell
+            // Sticky ticker column (no horizontal scroll)
+            ScrollView(.vertical) {
+                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                    Section(header:
+                        stickyHeaderCell("Ticker")
+                            .background(theme.surfaceTinted)
+                            .overlay(alignment: .bottom) {
+                                Rectangle().fill(theme.border).frame(height: 0.5)
+                            }
+                    ) {
+                        ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
+                            stickyTickerDataCell(index: index)
+                        }
+                        if !viewModel.hasEmptyTicker {
+                            newRowTickerCell
+                        }
                     }
                 }
             }
             .frame(width: tickerWidth)
             .background(theme.surfaceTinted)
 
-            // Scrollable columns (header + data scroll together horizontally)
+            // Scrollable columns — single ScrollView for both horizontal and vertical
+            // Header is pinned vertically, and scrolls horizontally with data
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                    Section(header:
-                        scrollableHeaderRow
-                            .background(theme.surfaceTinted)
-                    ) {
-                        ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
-                            scrollableDataRow(index: index)
-                        }
-                        if !viewModel.hasEmptyTicker {
-                            newRowEmptyCells
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                        Section(header:
+                            scrollableHeaderRow
+                                .background(theme.surfaceTinted)
+                        ) {
+                            ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
+                                scrollableDataRow(index: index)
+                            }
+                            if !viewModel.hasEmptyTicker {
+                                newRowEmptyCells
+                            }
                         }
                     }
                 }
             }
         }
+        .background(theme.surface)
     }
 
     // MARK: - Sticky Header Cell
@@ -122,7 +116,7 @@ struct StockTrackerView: View {
     private func stickyHeaderCell(_ title: String) -> some View {
         Text(title)
             .font(.system(size: 13, weight: .semibold, design: .monospaced))
-            .foregroundColor(theme.faint)
+            .foregroundColor(theme.text)
             .frame(width: tickerWidth, height: 32)
     }
 
@@ -180,7 +174,7 @@ struct StockTrackerView: View {
     private func headerCell(_ title: String, width: CGFloat) -> some View {
         Text(title)
             .font(.system(size: 13, weight: .semibold, design: .monospaced))
-            .foregroundColor(theme.faint)
+            .foregroundColor(theme.text)
             .frame(width: width, height: 32)
     }
 
