@@ -10,6 +10,7 @@
 		12C0C78E3AEAC77C93002F17 /* StockPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8A975B4EBE967C38C39DA /* StockPosition.swift */; };
 		253EFE81992249391B23A7B3 /* PortfolioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA76F7F434185E7A59D61127 /* PortfolioViewModel.swift */; };
 		2A1CBA78A170F159805700DE /* TickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB49B29E7454AC16602809AE /* TickerCell.swift */; };
+		35ABE82C912B394894F832C9 /* ObservableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF88B2D8595F09111B7941E6 /* ObservableScrollView.swift */; };
 		40CA849E4BA62B4C94281658 /* EditableCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76F748964CBEC1CDFD5571C /* EditableCellView.swift */; };
 		4244EB39722C393313BE9739 /* SparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7F736DF83032253DDCE439 /* SparklineView.swift */; };
 		4FE52D3BA187D603BCDC62C1 /* StockTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2679C66262F936DCCE658BDF /* StockTrackerView.swift */; };
@@ -33,6 +34,7 @@
 		98AA0055EAE4FDF60F1440C0 /* StockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockService.swift; sourceTree = "<group>"; };
 		A76F748964CBEC1CDFD5571C /* EditableCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableCellView.swift; sourceTree = "<group>"; };
 		A9B8A975B4EBE967C38C39DA /* StockPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockPosition.swift; sourceTree = "<group>"; };
+		AF88B2D8595F09111B7941E6 /* ObservableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableScrollView.swift; sourceTree = "<group>"; };
 		BDD1E30D6A36E462F09C66FC /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		DA76F7F434185E7A59D61127 /* PortfolioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioViewModel.swift; sourceTree = "<group>"; };
 		DB49B29E7454AC16602809AE /* TickerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TickerCell.swift; sourceTree = "<group>"; };
@@ -70,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				A76F748964CBEC1CDFD5571C /* EditableCellView.swift */,
+				AF88B2D8595F09111B7941E6 /* ObservableScrollView.swift */,
 				1F7F736DF83032253DDCE439 /* SparklineView.swift */,
 				2679C66262F936DCCE658BDF /* StockTrackerView.swift */,
 				DB49B29E7454AC16602809AE /* TickerCell.swift */,
@@ -182,6 +185,7 @@
 			files = (
 				40CA849E4BA62B4C94281658 /* EditableCellView.swift in Sources */,
 				FF03409D3FD6A67E4A80F284 /* FinTrackShmeckApp.swift in Sources */,
+				35ABE82C912B394894F832C9 /* ObservableScrollView.swift in Sources */,
 				253EFE81992249391B23A7B3 /* PortfolioViewModel.swift in Sources */,
 				4244EB39722C393313BE9739 /* SparklineView.swift in Sources */,
 				12C0C78E3AEAC77C93002F17 /* StockPosition.swift in Sources */,

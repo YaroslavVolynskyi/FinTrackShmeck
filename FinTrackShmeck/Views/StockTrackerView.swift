@@ -11,6 +11,9 @@ struct StockTrackerView: View {
     private let tickerWidth: CGFloat = 90
     private let colWidths: [CGFloat] = [82, 72, 90, 100, 120, 80, 86]
     // Columns: Price, Qty, Value, Day G/L, Description, AUM, Mkt Cap
+    private let rowHeight: CGFloat = 48
+    private let headerHeight: CGFloat = 32
+    @State private var hOffset: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -65,17 +68,31 @@ struct StockTrackerView: View {
     // MARK: - Table Card
 
     private var tableCard: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // Sticky ticker column (no horizontal scroll)
+        VStack(spacing: 0) {
+            // Sticky header row (outside vertical scroll)
+            HStack(spacing: 0) {
+                stickyHeaderCell("Ticker")
+                    .frame(width: tickerWidth)
+                    .background(theme.surfaceTinted)
+                    .zIndex(1)
+                GeometryReader { _ in
+                    scrollableHeaderRow
+                        .background(theme.surfaceTinted)
+                        .offset(x: hOffset)
+                }
+                .clipped()
+            }
+            .frame(height: headerHeight)
+            .background(theme.surfaceTinted)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(theme.border).frame(height: 0.5)
+            }
+
+            // Vertically scrollable content
             ScrollView(.vertical) {
-                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                    Section(header:
-                        stickyHeaderCell("Ticker")
-                            .background(theme.surfaceTinted)
-                            .overlay(alignment: .bottom) {
-                                Rectangle().fill(theme.border).frame(height: 0.5)
-                            }
-                    ) {
+                HStack(alignment: .top, spacing: 0) {
+                    // Ticker column
+                    VStack(spacing: 0) {
                         ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
                             stickyTickerDataCell(index: index)
                         }
@@ -83,20 +100,12 @@ struct StockTrackerView: View {
                             newRowTickerCell
                         }
                     }
-                }
-            }
-            .frame(width: tickerWidth)
-            .background(theme.surfaceTinted)
+                    .frame(width: tickerWidth)
+                    .background(theme.surfaceTinted)
 
-            // Scrollable columns — single ScrollView for both horizontal and vertical
-            // Header is pinned vertically, and scrolls horizontally with data
-            ScrollView(.horizontal, showsIndicators: false) {
-                ScrollView(.vertical) {
-                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                        Section(header:
-                            scrollableHeaderRow
-                                .background(theme.surfaceTinted)
-                        ) {
+                    // Horizontally scrollable columns
+                    ObservableHScrollView(offset: $hOffset) {
+                        VStack(spacing: 0) {
                             ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
                                 scrollableDataRow(index: index)
                             }
@@ -117,7 +126,7 @@ struct StockTrackerView: View {
         Text(title)
             .font(.system(size: 13, weight: .semibold, design: .monospaced))
             .foregroundColor(theme.text)
-            .frame(width: tickerWidth, height: 32)
+            .frame(width: tickerWidth, height: headerHeight)
     }
 
     // MARK: - Sticky Ticker Data Cell
@@ -130,10 +139,8 @@ struct StockTrackerView: View {
             width: tickerWidth,
             shouldFocus: viewModel.focusedTickerID == viewModel.positions[index].id,
             onTickerChange: {
-                let oldTicker = viewModel.positions[index].ticker
                 let newTicker = $0.trimmingCharacters(in: .whitespaces).uppercased()
                 if newTicker.isEmpty {
-                    // Empty submit — delete row (NEW will reappear)
                     viewModel.deletePosition(at: index)
                 } else {
                     viewModel.positions[index].ticker = newTicker
@@ -165,7 +172,7 @@ struct StockTrackerView: View {
             divider()
             headerCell("Mkt Cap", width: colWidths[6])
         }
-        .frame(height: 32)
+        .frame(height: headerHeight)
         .overlay(alignment: .bottom) {
             Rectangle().fill(theme.border).frame(height: 0.5)
         }
@@ -175,7 +182,7 @@ struct StockTrackerView: View {
         Text(title)
             .font(.system(size: 13, weight: .semibold, design: .monospaced))
             .foregroundColor(theme.text)
-            .frame(width: width, height: 32)
+            .frame(width: width, height: headerHeight)
     }
 
     // MARK: - Scrollable Data Row
@@ -234,7 +241,7 @@ struct StockTrackerView: View {
                 width: colWidths[6], theme: theme
             )
         }
-        .frame(height: 48)
+        .frame(height: rowHeight)
         .overlay(alignment: .bottom) {
             Rectangle().fill(theme.border).frame(height: 0.5)
         }
@@ -249,7 +256,7 @@ struct StockTrackerView: View {
             .font(mono ? .system(size: 13, design: .monospaced) : .system(size: 13))
             .foregroundColor(color)
             .lineLimit(1)
-            .frame(width: width, height: 48)
+            .frame(width: width, height: rowHeight)
     }
 
     // MARK: - New Row Empty Cells (scrollable side)
@@ -258,10 +265,10 @@ struct StockTrackerView: View {
         HStack(spacing: 0) {
             ForEach(0..<colWidths.count, id: \.self) { i in
                 divider()
-                Color.clear.frame(width: colWidths[i], height: 48)
+                Color.clear.frame(width: colWidths[i], height: rowHeight)
             }
         }
-        .frame(height: 48)
+        .frame(height: rowHeight)
         .background(theme.surface)
         .overlay(alignment: .bottom) {
             Rectangle().fill(theme.border).frame(height: 0.5)
@@ -278,7 +285,7 @@ struct StockTrackerView: View {
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
         }
         .foregroundColor(theme.accent)
-        .frame(width: tickerWidth, height: 48)
+        .frame(width: tickerWidth, height: rowHeight)
         .background(theme.surfaceTinted)
         .overlay(alignment: .bottom) {
             Rectangle().fill(theme.border).frame(height: 0.5)
@@ -288,7 +295,6 @@ struct StockTrackerView: View {
             viewModel.addPosition()
         }
     }
-
 
     // MARK: - Helpers
 
