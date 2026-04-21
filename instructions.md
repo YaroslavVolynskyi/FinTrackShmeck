@@ -24,7 +24,7 @@ A single-screen iOS app for tracking stock portfolio positions with live price u
 - **Price Data**: Yahoo Finance API (unofficial, free)
 - **Bundle ID**: `com.yaroslav.FinTrackShmeck`
 - **Firebase Project ID**: `trackershmecker`
-- **Apple Team ID**: `REDACTED_TEAM_ID`
+- **Apple Team ID**: (see project.yml, gitignored)
 
 ## How It Works
 
@@ -133,7 +133,7 @@ xcodebuild -project FinTrackShmeck.xcodeproj -scheme FinTrackShmeck \
 
 # Build for device
 xcodebuild -project FinTrackShmeck.xcodeproj -scheme FinTrackShmeck \
-  -destination 'id=REDACTED_DEVICE_UDID' -allowProvisioningUpdates build
+  -destination 'id=<YOUR_DEVICE_UDID>' -allowProvisioningUpdates build
 
 # Deploy Cloud Function
 firebase deploy --only functions --force
@@ -146,8 +146,8 @@ xcrun simctl install booted FinTrackShmeck.app
 xcrun simctl launch booted com.yaroslav.FinTrackShmeck
 
 # Install on device
-xcrun devicectl device install app --device REDACTED_DEVICE_UDID FinTrackShmeck.app
-xcrun devicectl device process launch --device REDACTED_DEVICE_UDID com.yaroslav.FinTrackShmeck
+xcrun devicectl device install app --device <YOUR_DEVICE_UDID> FinTrackShmeck.app
+xcrun devicectl device process launch --device <YOUR_DEVICE_UDID> com.yaroslav.FinTrackShmeck
 ```
 
 ## Sticky Header/Column Implementation

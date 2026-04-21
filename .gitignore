@@ -51,6 +51,9 @@ FinTrackShmeck/seed_data.json
 # Firebase config (contains API keys)
 FinTrackShmeck/GoogleService-Info.plist
 
+# Project config (contains Team ID)
+project.yml
+
 # Firebase
 .firebaserc
 firebase-debug.log
