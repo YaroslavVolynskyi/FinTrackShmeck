@@ -8,8 +8,9 @@ struct StockTrackerView: View {
         AppTheme.current(for: colorScheme)
     }
 
-    private let tickerWidth: CGFloat = 100
-    private let colWidth: CGFloat = 82
+    private let tickerWidth: CGFloat = 90
+    private let colWidths: [CGFloat] = [82, 72, 90, 100, 100, 120, 80, 86]
+    // Columns: Price, Qty, Value, Day G/L, Total G/L, Description, AUM, Mkt Cap
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,6 +19,15 @@ struct StockTrackerView: View {
             Spacer().frame(height: 34)
         }
         .background(theme.background)
+        .onAppear { viewModel.refreshPrices() }
+        .alert("Invalid Ticker", isPresented: Binding(
+            get: { viewModel.tickerError != nil },
+            set: { if !$0 { viewModel.tickerError = nil } }
+        )) {
+            Button("OK") { viewModel.tickerError = nil }
+        } message: {
+            Text(viewModel.tickerError ?? "")
+        }
     }
 
     // MARK: - Header
@@ -38,9 +48,10 @@ struct StockTrackerView: View {
                 Spacer()
 
                 HStack(spacing: 4) {
-                    Text("+$\(formatMoney(viewModel.dailyPL))")
+                    let pl = viewModel.dailyPL
+                    Text("\(pl >= 0 ? "+" : "")$\(formatMoney(abs(pl)))")
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
-                        .foregroundColor(theme.positive)
+                        .foregroundColor(pl >= 0 ? theme.positive : theme.negative)
                     Text("today")
                         .font(.system(size: 13))
                         .foregroundColor(theme.muted)
@@ -57,217 +68,188 @@ struct StockTrackerView: View {
         VStack(spacing: 0) {
             ScrollView(.vertical) {
                 VStack(spacing: 0) {
-                    // Header row
-                    headerRow
-                    // Data rows
-                    ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
-                        dataRow(index: index)
-                        Divider().background(theme.border)
-                    }
-                    // Add position button
+                    tableContent
                     addButton
                 }
             }
-
-            scrollHint
         }
         .background(theme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(theme.border, lineWidth: 0.5)
-        )
-        .padding(.horizontal, 12)
+        .overlay(alignment: .top) {
+            Rectangle().fill(theme.border).frame(height: 0.5)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(theme.border).frame(height: 0.5)
+        }
     }
 
-    // MARK: - Header Row
+    // MARK: - Table Content (sticky ticker column + scrollable rest)
 
-    private var headerRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                headerCell("Ticker", width: tickerWidth)
-                headerCell("Price", width: colWidth, align: .trailing)
-                headerCell("%", width: 80, align: .trailing)
-                headerCell("7d", width: 68)
-                headerCell("Shares", width: 68, align: .trailing)
-                headerCell("Sector", width: 116)
-                headerCell("AUM", width: 72, align: .trailing)
-                headerCell("Mkt Cap", width: 76, align: .trailing)
-                headerCell("Day High", width: colWidth, align: .trailing)
-                headerCell("Day Low", width: colWidth, align: .trailing)
-                headerCell("52W High", width: 86, align: .trailing)
-                headerCell("52W Low", width: 86, align: .trailing)
-                headerCell("Volume", width: 76, align: .trailing)
-                headerCell("P/E", width: 62, align: .trailing)
-                headerCell("Div Yld", width: 76, align: .trailing)
-                headerCell("Cost", width: colWidth, align: .trailing)
+    private var tableContent: some View {
+        HStack(spacing: 0) {
+            // Sticky ticker column
+            VStack(spacing: 0) {
+                stickyHeaderCell("Ticker")
+                ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
+                    stickyTickerDataCell(index: index)
+                }
+            }
+            .frame(width: tickerWidth)
+            .background(theme.surface)
+
+            // Scrollable columns
+            ScrollView(.horizontal, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    scrollableHeaderRow
+                    ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
+                        scrollableDataRow(index: index)
+                    }
+                }
             }
         }
-        .frame(height: 32)
-        .background(theme.surface)
-        .overlay(alignment: .bottom) {
-            Divider().background(theme.border)
-        }
     }
 
-    private func headerCell(_ title: String, width: CGFloat, align: Alignment = .leading) -> some View {
+    // MARK: - Sticky Header Cell
+
+    private func stickyHeaderCell(_ title: String) -> some View {
         Text(title)
             .font(.system(size: 10, weight: .semibold))
             .tracking(0.8)
             .textCase(.uppercase)
             .foregroundColor(theme.faint)
-            .frame(width: width, height: 32, alignment: align)
-            .padding(.horizontal, 10)
-    }
-
-    // MARK: - Data Row
-
-    private func dataRow(index: Int) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                // Ticker column
-                tickerCell(index: index)
-
-                // Price
-                EditableCellView(
-                    value: String(format: "%.2f", viewModel.positions[index].price),
-                    onCommit: { viewModel.positions[index].price = Double($0) ?? 0 },
-                    alignment: .trailing, isMono: true, color: theme.text,
-                    width: colWidth, theme: theme
-                )
-
-                // % Change
-                let pct = viewModel.positions[index].pctChange
-                let isUp = pct >= 0
-                EditableCellView(
-                    value: "\(isUp ? "+" : "")\(String(format: "%.2f", pct))%",
-                    onCommit: { viewModel.positions[index].pctChange = Double($0.replacingOccurrences(of: "%", with: "").replacingOccurrences(of: "+", with: "")) ?? 0 },
-                    alignment: .trailing, isMono: true, color: isUp ? theme.positive : theme.negative,
-                    fontWeight: .medium, width: 80, theme: theme
-                )
-
-                // Sparkline
-                SparklineView(
-                    data: viewModel.positions[index].sparkData,
-                    isPositive: isUp,
-                    theme: theme
-                )
-                .frame(width: 68)
-                .padding(.horizontal, 6)
-
-                // Shares
-                EditableCellView(
-                    value: "\(viewModel.positions[index].shares)",
-                    onCommit: { viewModel.positions[index].shares = Int($0) ?? 0 },
-                    alignment: .trailing, isMono: true, color: theme.text,
-                    width: 68, theme: theme
-                )
-
-                // Sector
-                EditableCellView(
-                    value: viewModel.positions[index].field,
-                    onCommit: { viewModel.positions[index].field = $0 },
-                    color: theme.muted, width: 116, theme: theme
-                )
-
-                // AUM
-                EditableCellView(
-                    value: viewModel.positions[index].aum,
-                    onCommit: { viewModel.positions[index].aum = $0 },
-                    alignment: .trailing, isMono: true, color: theme.muted,
-                    placeholder: "—", width: 72, theme: theme
-                )
-
-                // Market Cap
-                EditableCellView(
-                    value: viewModel.positions[index].mcap,
-                    onCommit: { viewModel.positions[index].mcap = $0 },
-                    alignment: .trailing, isMono: true, color: theme.text,
-                    width: 76, theme: theme
-                )
-
-                // Day High
-                EditableCellView(
-                    value: String(format: "%.2f", viewModel.positions[index].dayHigh),
-                    onCommit: { viewModel.positions[index].dayHigh = Double($0) ?? 0 },
-                    alignment: .trailing, isMono: true, color: theme.text,
-                    width: colWidth, theme: theme
-                )
-
-                // Day Low
-                EditableCellView(
-                    value: String(format: "%.2f", viewModel.positions[index].dayLow),
-                    onCommit: { viewModel.positions[index].dayLow = Double($0) ?? 0 },
-                    alignment: .trailing, isMono: true, color: theme.text,
-                    width: colWidth, theme: theme
-                )
-
-                // 52W High
-                EditableCellView(
-                    value: String(format: "%.2f", viewModel.positions[index].high52w),
-                    onCommit: { viewModel.positions[index].high52w = Double($0) ?? 0 },
-                    alignment: .trailing, isMono: true, color: theme.muted,
-                    width: 86, theme: theme
-                )
-
-                // 52W Low
-                EditableCellView(
-                    value: String(format: "%.2f", viewModel.positions[index].low52w),
-                    onCommit: { viewModel.positions[index].low52w = Double($0) ?? 0 },
-                    alignment: .trailing, isMono: true, color: theme.muted,
-                    width: 86, theme: theme
-                )
-
-                // Volume
-                EditableCellView(
-                    value: viewModel.positions[index].volume,
-                    onCommit: { viewModel.positions[index].volume = $0 },
-                    alignment: .trailing, isMono: true, color: theme.muted,
-                    width: 76, theme: theme
-                )
-
-                // P/E
-                EditableCellView(
-                    value: String(format: "%.1f", viewModel.positions[index].pe),
-                    onCommit: { viewModel.positions[index].pe = Double($0) ?? 0 },
-                    alignment: .trailing, isMono: true, color: theme.text,
-                    width: 62, theme: theme
-                )
-
-                // Div Yield
-                EditableCellView(
-                    value: viewModel.positions[index].divYield,
-                    onCommit: { viewModel.positions[index].divYield = $0 },
-                    alignment: .trailing, isMono: true, color: theme.muted,
-                    width: 76, theme: theme
-                )
-
-                // Cost Basis
-                EditableCellView(
-                    value: String(format: "%.2f", viewModel.positions[index].costBasis),
-                    onCommit: { viewModel.positions[index].costBasis = Double($0) ?? 0 },
-                    alignment: .trailing, isMono: true, color: theme.muted,
-                    width: colWidth, theme: theme
-                )
+            .frame(width: tickerWidth, height: 32)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(theme.border).frame(height: 0.5)
             }
+    }
+
+    // MARK: - Sticky Ticker Data Cell
+
+    private func stickyTickerDataCell(index: Int) -> some View {
+        TickerCell(
+            ticker: viewModel.positions[index].ticker,
+            name: viewModel.positions[index].name,
+            theme: theme,
+            width: tickerWidth,
+            onTickerChange: { viewModel.positions[index].ticker = $0.uppercased(); viewModel.validateAndRefreshTicker(at: index) },
+            onNameChange: { viewModel.positions[index].name = $0 },
+            onDelete: { viewModel.deletePosition(at: index) }
+        )
+    }
+
+    // MARK: - Scrollable Header Row
+
+    private var scrollableHeaderRow: some View {
+        HStack(spacing: 0) {
+            divider()
+            headerCell("Price", width: colWidths[0])
+            divider()
+            headerCell("Qty", width: colWidths[1])
+            divider()
+            headerCell("Value", width: colWidths[2])
+            divider()
+            headerCell("Day G/L", width: colWidths[3])
+            divider()
+            headerCell("Total G/L", width: colWidths[4])
+            divider()
+            headerCell("Description", width: colWidths[5])
+            divider()
+            headerCell("AUM", width: colWidths[6])
+            divider()
+            headerCell("Mkt Cap", width: colWidths[7])
+        }
+        .frame(height: 32)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(theme.border).frame(height: 0.5)
         }
     }
 
-    private func tickerCell(index: Int) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    private func headerCell(_ title: String, width: CGFloat) -> some View {
+        Text(title)
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(0.8)
+            .textCase(.uppercase)
+            .foregroundColor(theme.faint)
+            .frame(width: width, height: 32)
+    }
+
+    // MARK: - Scrollable Data Row
+
+    private func scrollableDataRow(index: Int) -> some View {
+        let pos = viewModel.positions[index]
+        let value = pos.price * pos.shares
+        let dayGL = pos.price * (pos.pctChange / 100.0) * pos.shares
+        let totalGL = (pos.price - pos.costBasis) * pos.shares
+        let dayColor = dayGL >= 0 ? theme.positive : theme.negative
+        let dayText = "\(dayGL >= 0 ? "+" : "-")$\(formatMoney(abs(dayGL)))"
+        let totalColor = totalGL >= 0 ? theme.positive : theme.negative
+        let totalText = "\(totalGL >= 0 ? "+" : "-")$\(formatMoney(abs(totalGL)))"
+
+        return HStack(spacing: 0) {
+            divider()
             EditableCellView(
-                value: viewModel.positions[index].ticker,
-                onCommit: { viewModel.positions[index].ticker = $0.uppercased() },
-                isMono: true, color: theme.text, fontWeight: .semibold,
-                placeholder: "TICK", width: 80, theme: theme
+                value: String(format: "%.2f", pos.price),
+                onCommit: { viewModel.positions[index].price = Double($0) ?? 0; viewModel.onEdit() },
+                alignment: .center, isMono: true, color: theme.text,
+                width: colWidths[0], theme: theme
             )
-            Text(viewModel.positions[index].name.isEmpty ? "—" : viewModel.positions[index].name)
-                .font(.system(size: 10))
-                .foregroundColor(theme.muted)
-                .lineLimit(1)
-                .padding(.horizontal, 10)
+
+            divider()
+            EditableCellView(
+                value: String(format: "%.2f", pos.shares),
+                onCommit: { viewModel.positions[index].shares = Double($0) ?? 0; viewModel.onEdit() },
+                alignment: .center, isMono: true, color: theme.text,
+                width: colWidths[1], theme: theme
+            )
+
+            divider()
+            cell(text: "$\(formatMoney(value))", width: colWidths[2], color: theme.text, mono: true)
+
+            divider()
+            cell(text: dayText, width: colWidths[3], color: dayColor, mono: true)
+
+            divider()
+            cell(text: totalText, width: colWidths[4], color: totalColor, mono: true)
+
+            divider()
+            EditableCellView(
+                value: pos.field,
+                onCommit: { viewModel.positions[index].field = $0; viewModel.onEdit() },
+                alignment: .center, color: theme.muted,
+                width: colWidths[5], theme: theme
+            )
+
+            divider()
+            EditableCellView(
+                value: pos.aum,
+                onCommit: { viewModel.positions[index].aum = $0; viewModel.onEdit() },
+                alignment: .center, isMono: true, color: theme.muted,
+                placeholder: "—", width: colWidths[6], theme: theme
+            )
+
+            divider()
+            EditableCellView(
+                value: pos.mcap,
+                onCommit: { viewModel.positions[index].mcap = $0; viewModel.onEdit() },
+                alignment: .center, isMono: true, color: theme.text,
+                width: colWidths[7], theme: theme
+            )
         }
-        .frame(width: tickerWidth)
+        .frame(height: 48)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(theme.border).frame(height: 0.5)
+        }
+    }
+
+    private func divider() -> some View {
+        Rectangle().fill(theme.border).frame(width: 0.5)
+    }
+
+    private func cell(text: String, width: CGFloat, color: Color, mono: Bool = false) -> some View {
+        Text(text)
+            .font(mono ? .system(size: 13, design: .monospaced) : .system(size: 13))
+            .foregroundColor(color)
+            .lineLimit(1)
+            .frame(width: width, height: 48)
     }
 
     // MARK: - Add Button
@@ -287,23 +269,6 @@ struct StockTrackerView: View {
         }
     }
 
-    // MARK: - Scroll Hint
-
-    private var scrollHint: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "arrow.left.and.right")
-                .font(.system(size: 8))
-            Text("SCROLL BOTH DIRECTIONS")
-                .font(.system(size: 10, weight: .regular))
-                .tracking(0.5)
-        }
-        .foregroundColor(theme.faint)
-        .frame(height: 26)
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .top) {
-            Divider().background(theme.border)
-        }
-    }
 
     // MARK: - Helpers
 

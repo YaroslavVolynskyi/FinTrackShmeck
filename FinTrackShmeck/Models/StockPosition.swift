@@ -1,11 +1,11 @@
 import Foundation
 
-struct StockPosition: Identifiable {
+struct StockPosition: Identifiable, Codable {
     let id: UUID
     var ticker: String
     var name: String
     var price: Double
-    var shares: Int
+    var shares: Double
     var field: String
     var aum: String
     var mcap: String
@@ -21,7 +21,7 @@ struct StockPosition: Identifiable {
     var sparkData: [Double]
 
     init(
-        ticker: String = "", name: String = "", price: Double = 0, shares: Int = 0,
+        ticker: String = "", name: String = "", price: Double = 0, shares: Double = 0,
         field: String = "", aum: String = "—", mcap: String = "—", pctChange: Double = 0,
         dayHigh: Double = 0, dayLow: Double = 0, high52w: Double = 0, low52w: Double = 0,
         volume: String = "—", pe: Double = 0, divYield: String = "—", costBasis: Double = 0,

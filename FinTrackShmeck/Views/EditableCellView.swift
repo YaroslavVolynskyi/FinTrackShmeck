@@ -3,7 +3,7 @@ import SwiftUI
 struct EditableCellView: View {
     let value: String
     let onCommit: (String) -> Void
-    var alignment: TextAlignment = .leading
+    var alignment: TextAlignment = .center
     var isMono: Bool = false
     var color: Color = .primary
     var fontWeight: Font.Weight = .regular
@@ -23,7 +23,7 @@ struct EditableCellView: View {
                     .font(isMono ? .system(size: 13, design: .monospaced) : .system(size: 13))
                     .fontWeight(fontWeight)
                     .foregroundColor(color)
-                    .multilineTextAlignment(alignment == .trailing ? .trailing : alignment == .center ? .center : .leading)
+                    .multilineTextAlignment(alignment)
                     .textFieldStyle(.plain)
                     .onSubmit {
                         commitEdit()
@@ -39,11 +39,11 @@ struct EditableCellView: View {
                     .fontWeight(fontWeight)
                     .foregroundColor(value.isEmpty ? theme.faint : color)
                     .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: alignment == .trailing ? .trailing : alignment == .center ? .center : .leading)
+                    .frame(maxWidth: .infinity, alignment: alignment == .trailing ? .trailing : alignment == .center ? .center : .leading as Alignment)
             }
         }
-        .frame(width: width, height: 40)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 6)
+        .frame(width: width, height: 48)
         .background(isEditing ? theme.surface.opacity(0.95) : .clear)
         .overlay(
             RoundedRectangle(cornerRadius: 4)
