@@ -16,6 +16,9 @@ struct StockTrackerView: View {
     private let headerHeight: CGFloat = 32
     @State private var hOffset: CGFloat = 0
     @State private var scrollToID: UUID?
+    @FocusState private var initialFieldFocused: Bool
+    @State private var initialDraft: String = ""
+    @State private var isEditingInitial: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,7 +55,7 @@ struct StockTrackerView: View {
                 .foregroundColor(theme.muted)
                 .tracking(0.4)
 
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .top) {
                 Text("$\(formatMoney(viewModel.totalValue))")
                     .font(.system(size: 32, weight: .semibold, design: .monospaced))
                     .foregroundColor(theme.text)
@@ -60,14 +63,71 @@ struct StockTrackerView: View {
 
                 Spacer()
 
-                HStack(spacing: 4) {
-                    let pl = viewModel.dailyPL
-                    Text("\(pl >= 0 ? "+" : "-")$\(formatMoney(abs(pl)))")
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
-                        .foregroundColor(pl >= 0 ? theme.positive : theme.negative)
-                    Text("today")
-                        .font(.system(size: 13))
-                        .foregroundColor(theme.muted)
+                VStack(alignment: .trailing, spacing: 4) {
+                    // Initial investment (editable)
+                    HStack(spacing: 4) {
+                        Group {
+                            if isEditingInitial {
+                                TextField("0.00", text: $initialDraft)
+                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                    .foregroundColor(theme.text)
+                                    .multilineTextAlignment(.trailing)
+                                    .keyboardType(.decimalPad)
+                                    .focused($initialFieldFocused)
+                                    .onChange(of: initialFieldFocused) { _, focused in
+                                        if !focused { commitInitial() }
+                                    }
+                                    .toolbar {
+                                        if initialFieldFocused {
+                                            ToolbarItemGroup(placement: .keyboard) {
+                                                Spacer()
+                                                Button("Done") { commitInitial() }
+                                            }
+                                        }
+                                    }
+                            } else {
+                                Text("$\(formatMoney(viewModel.initialInvestment))")
+                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                    .foregroundColor(theme.text)
+                            }
+                        }
+                        .frame(width: 100, alignment: .trailing)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if !isEditingInitial {
+                                initialDraft = ""
+                                isEditingInitial = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                    initialFieldFocused = true
+                                }
+                            }
+                        }
+                        Text("initial")
+                            .font(.system(size: 13))
+                            .foregroundColor(theme.muted)
+                    }
+
+                    // Total gain/loss
+                    HStack(spacing: 4) {
+                        let gl = viewModel.totalGainLoss
+                        Text("\(gl >= 0 ? "+" : "-")$\(formatMoney(abs(gl)))")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(gl >= 0 ? theme.positive : theme.negative)
+                        Text("total")
+                            .font(.system(size: 13))
+                            .foregroundColor(theme.muted)
+                    }
+
+                    // Daily P&L
+                    HStack(spacing: 4) {
+                        let pl = viewModel.dailyPL
+                        Text("\(pl >= 0 ? "+" : "-")$\(formatMoney(abs(pl)))")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(pl >= 0 ? theme.positive : theme.negative)
+                        Text("today")
+                            .font(.system(size: 13))
+                            .foregroundColor(theme.muted)
+                    }
                 }
             }
         }
@@ -362,6 +422,14 @@ struct StockTrackerView: View {
     }
 
     // MARK: - Helpers
+
+    private func commitInitial() {
+        initialFieldFocused = false
+        isEditingInitial = false
+        if let val = Double(initialDraft), val > 0 {
+            viewModel.initialInvestment = val
+        }
+    }
 
     private func formatMoney(_ value: Double) -> String {
         let formatter = NumberFormatter()

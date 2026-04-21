@@ -24,6 +24,7 @@ class PortfolioViewModel {
     }
 
     init() {
+        initialInvestment = UserDefaults.standard.double(forKey: "initialInvestment")
         positions = Self.loadPositions()
         notificationObserver = NotificationCenter.default.addObserver(
             forName: .priceAlertReceived, object: nil, queue: .main
@@ -56,8 +57,16 @@ class PortfolioViewModel {
         }
     }
 
+    var initialInvestment: Double {
+        didSet { saveInitialInvestment() }
+    }
+
     var totalValue: Double {
         positions.reduce(0) { $0 + $1.price * $1.shares }
+    }
+
+    var totalGainLoss: Double {
+        totalValue - initialInvestment
     }
 
     var dailyPL: Double {
@@ -191,6 +200,10 @@ class PortfolioViewModel {
     }
 
     // MARK: - Persistence
+
+    private func saveInitialInvestment() {
+        UserDefaults.standard.set(initialInvestment, forKey: "initialInvestment")
+    }
 
     func save() {
         let validPositions = positions.filter { !$0.ticker.isEmpty }
