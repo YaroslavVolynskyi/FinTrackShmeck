@@ -9,8 +9,8 @@ struct StockTrackerView: View {
     }
 
     private let tickerWidth: CGFloat = 90
-    private let colWidths: [CGFloat] = [82, 72, 90, 100, 100, 120, 80, 86]
-    // Columns: Price, Qty, Value, Day G/L, Total G/L, Description, AUM, Mkt Cap
+    private let colWidths: [CGFloat] = [82, 72, 90, 100, 120, 80, 86]
+    // Columns: Price, Qty, Value, Day G/L, Description, AUM, Mkt Cap
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,9 +22,9 @@ struct StockTrackerView: View {
         .onAppear { viewModel.refreshPrices() }
         .alert("Invalid Ticker", isPresented: Binding(
             get: { viewModel.tickerError != nil },
-            set: { if !$0 { viewModel.tickerError = nil } }
+            set: { if !$0 { viewModel.dismissTickerError() } }
         )) {
-            Button("OK") { viewModel.tickerError = nil }
+            Button("OK") { viewModel.dismissTickerError() }
         } message: {
             Text(viewModel.tickerError ?? "")
         }
@@ -65,13 +65,9 @@ struct StockTrackerView: View {
     // MARK: - Table Card
 
     private var tableCard: some View {
-        VStack(spacing: 0) {
-            ScrollView(.vertical) {
-                VStack(spacing: 0) {
-                    tableContent
-                    addButton
-                }
-            }
+        ScrollView(.vertical) {
+            tableContent
+            addButton
         }
         .background(theme.surface)
         .overlay(alignment: .top) {
@@ -85,23 +81,31 @@ struct StockTrackerView: View {
     // MARK: - Table Content (sticky ticker column + scrollable rest)
 
     private var tableContent: some View {
-        HStack(spacing: 0) {
-            // Sticky ticker column
-            VStack(spacing: 0) {
-                stickyHeaderCell("Ticker")
-                ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
-                    stickyTickerDataCell(index: index)
+        HStack(alignment: .top, spacing: 0) {
+            // Sticky ticker column with pinned header
+            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                Section(header:
+                    stickyHeaderCell("Ticker")
+                        .background(theme.surfaceTinted)
+                ) {
+                    ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
+                        stickyTickerDataCell(index: index)
+                    }
                 }
             }
             .frame(width: tickerWidth)
-            .background(theme.surface)
+            .background(theme.surfaceTinted)
 
-            // Scrollable columns
+            // Scrollable columns (header + data scroll together horizontally)
             ScrollView(.horizontal, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    scrollableHeaderRow
-                    ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
-                        scrollableDataRow(index: index)
+                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                    Section(header:
+                        scrollableHeaderRow
+                            .background(theme.surfaceTinted)
+                    ) {
+                        ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
+                            scrollableDataRow(index: index)
+                        }
                     }
                 }
             }
@@ -117,9 +121,6 @@ struct StockTrackerView: View {
             .textCase(.uppercase)
             .foregroundColor(theme.faint)
             .frame(width: tickerWidth, height: 32)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(theme.border).frame(height: 0.5)
-            }
     }
 
     // MARK: - Sticky Ticker Data Cell
@@ -130,9 +131,19 @@ struct StockTrackerView: View {
             name: viewModel.positions[index].name,
             theme: theme,
             width: tickerWidth,
-            onTickerChange: { viewModel.positions[index].ticker = $0.uppercased(); viewModel.validateAndRefreshTicker(at: index) },
+            shouldFocus: viewModel.focusedTickerID == viewModel.positions[index].id,
+            onTickerChange: {
+                let newTicker = $0.trimmingCharacters(in: .whitespaces).uppercased()
+                if newTicker.isEmpty {
+                    viewModel.deletePosition(at: index)
+                } else {
+                    viewModel.positions[index].ticker = newTicker
+                    viewModel.validateAndRefreshTicker(at: index)
+                }
+            },
             onNameChange: { viewModel.positions[index].name = $0 },
-            onDelete: { viewModel.deletePosition(at: index) }
+            onDelete: { viewModel.deletePosition(at: index) },
+            onFocusHandled: { viewModel.focusedTickerID = nil }
         )
     }
 
@@ -149,13 +160,11 @@ struct StockTrackerView: View {
             divider()
             headerCell("Day G/L", width: colWidths[3])
             divider()
-            headerCell("Total G/L", width: colWidths[4])
+            headerCell("Description", width: colWidths[4])
             divider()
-            headerCell("Description", width: colWidths[5])
+            headerCell("AUM", width: colWidths[5])
             divider()
-            headerCell("AUM", width: colWidths[6])
-            divider()
-            headerCell("Mkt Cap", width: colWidths[7])
+            headerCell("Mkt Cap", width: colWidths[6])
         }
         .frame(height: 32)
         .overlay(alignment: .bottom) {
@@ -177,18 +186,15 @@ struct StockTrackerView: View {
     private func scrollableDataRow(index: Int) -> some View {
         let pos = viewModel.positions[index]
         let value = pos.price * pos.shares
-        let dayGL = pos.price * (pos.pctChange / 100.0) * pos.shares
-        let totalGL = (pos.price - pos.costBasis) * pos.shares
+        let dayGL = (pos.price - pos.previousClose) * pos.shares
         let dayColor = dayGL >= 0 ? theme.positive : theme.negative
         let dayText = "\(dayGL >= 0 ? "+" : "-")$\(formatMoney(abs(dayGL)))"
-        let totalColor = totalGL >= 0 ? theme.positive : theme.negative
-        let totalText = "\(totalGL >= 0 ? "+" : "-")$\(formatMoney(abs(totalGL)))"
 
         return HStack(spacing: 0) {
             divider()
             EditableCellView(
-                value: String(format: "%.2f", pos.price),
-                onCommit: { viewModel.positions[index].price = Double($0) ?? 0; viewModel.onEdit() },
+                value: "$" + String(format: "%.2f", pos.price),
+                onCommit: { viewModel.positions[index].price = Double($0.replacingOccurrences(of: "$", with: "")) ?? 0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.text,
                 width: colWidths[0], theme: theme
             )
@@ -208,14 +214,11 @@ struct StockTrackerView: View {
             cell(text: dayText, width: colWidths[3], color: dayColor, mono: true)
 
             divider()
-            cell(text: totalText, width: colWidths[4], color: totalColor, mono: true)
-
-            divider()
             EditableCellView(
                 value: pos.field,
                 onCommit: { viewModel.positions[index].field = $0; viewModel.onEdit() },
                 alignment: .center, color: theme.muted,
-                width: colWidths[5], theme: theme
+                width: colWidths[4], theme: theme
             )
 
             divider()
@@ -223,7 +226,7 @@ struct StockTrackerView: View {
                 value: pos.aum,
                 onCommit: { viewModel.positions[index].aum = $0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.muted,
-                placeholder: "—", width: colWidths[6], theme: theme
+                placeholder: "—", width: colWidths[5], theme: theme
             )
 
             divider()
@@ -231,7 +234,7 @@ struct StockTrackerView: View {
                 value: pos.mcap,
                 onCommit: { viewModel.positions[index].mcap = $0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.text,
-                width: colWidths[7], theme: theme
+                width: colWidths[6], theme: theme
             )
         }
         .frame(height: 48)

@@ -6,6 +6,8 @@ class PortfolioViewModel {
     var positions: [StockPosition] = PortfolioViewModel.makeSeedData()
     var isRefreshing = false
     var tickerError: String?
+    var focusedTickerID: UUID?
+    private var errorTickerID: UUID?
 
     private var refreshTask: Task<Void, Never>?
 
@@ -15,14 +17,14 @@ class PortfolioViewModel {
 
     var dailyPL: Double {
         positions.reduce(0) { sum, pos in
-            let changeAmount = pos.price * (pos.pctChange / 100.0) * pos.shares
-            return sum + changeAmount
+            return sum + (pos.price - pos.previousClose) * pos.shares
         }
     }
 
     func addPosition() {
-        positions.append(StockPosition())
-        scheduleRefresh()
+        let newPosition = StockPosition()
+        positions.append(newPosition)
+        focusedTickerID = newPosition.id
     }
 
     func deletePosition(at index: Int) {
@@ -43,31 +45,21 @@ class PortfolioViewModel {
         refreshTask = Task { @MainActor in
             let quotes = await StockService.shared.fetchQuotes(for: [ticker])
             if let quote = quotes[ticker] {
-                positions[index].price = quote.price
-                positions[index].pctChange = round(quote.pctChange * 100) / 100
-                positions[index].dayHigh = quote.dayHigh
-                positions[index].dayLow = quote.dayLow
-                positions[index].high52w = quote.high52w
-                positions[index].low52w = quote.low52w
-                if !quote.sparkData.isEmpty {
-                    positions[index].sparkData = quote.sparkData
-                }
-                if positions[index].name.isEmpty {
-                    positions[index].name = quote.name
-                }
-                let vol = quote.volume
-                if vol >= 1_000_000 {
-                    positions[index].volume = String(format: "%.1fM", Double(vol) / 1_000_000)
-                } else if vol >= 1_000 {
-                    positions[index].volume = String(format: "%.1fK", Double(vol) / 1_000)
-                } else {
-                    positions[index].volume = "\(vol)"
-                }
+                applyQuote(quote, at: index)
                 // Refresh all other tickers too
                 await fetchAllPrices()
             } else {
+                errorTickerID = positions[index].id
                 tickerError = "Ticker \"\(ticker)\" not found"
             }
+        }
+    }
+
+    func dismissTickerError() {
+        tickerError = nil
+        if let id = errorTickerID {
+            focusedTickerID = id
+            errorTickerID = nil
         }
     }
 
@@ -97,28 +89,32 @@ class PortfolioViewModel {
         isRefreshing = false
 
         for i in positions.indices {
-            let ticker = positions[i].ticker
-            guard let quote = quotes[ticker] else { continue }
-            positions[i].price = quote.price
-            positions[i].pctChange = round(quote.pctChange * 100) / 100
-            positions[i].dayHigh = quote.dayHigh
-            positions[i].dayLow = quote.dayLow
-            positions[i].high52w = quote.high52w
-            positions[i].low52w = quote.low52w
-            if !quote.sparkData.isEmpty {
-                positions[i].sparkData = quote.sparkData
-            }
-            if positions[i].name.isEmpty {
-                positions[i].name = quote.name
-            }
-            let vol = quote.volume
-            if vol >= 1_000_000 {
-                positions[i].volume = String(format: "%.1fM", Double(vol) / 1_000_000)
-            } else if vol >= 1_000 {
-                positions[i].volume = String(format: "%.1fK", Double(vol) / 1_000)
-            } else {
-                positions[i].volume = "\(vol)"
-            }
+            guard let quote = quotes[positions[i].ticker] else { continue }
+            applyQuote(quote, at: i)
+        }
+    }
+
+    private func applyQuote(_ quote: StockQuote, at index: Int) {
+        positions[index].price = quote.price
+        positions[index].previousClose = quote.previousClose
+        positions[index].pctChange = round(quote.pctChange * 100) / 100
+        positions[index].dayHigh = quote.dayHigh
+        positions[index].dayLow = quote.dayLow
+        positions[index].high52w = quote.high52w
+        positions[index].low52w = quote.low52w
+        if !quote.sparkData.isEmpty {
+            positions[index].sparkData = quote.sparkData
+        }
+        if positions[index].name.isEmpty {
+            positions[index].name = quote.name
+        }
+        let vol = quote.volume
+        if vol >= 1_000_000 {
+            positions[index].volume = String(format: "%.1fM", Double(vol) / 1_000_000)
+        } else if vol >= 1_000 {
+            positions[index].volume = String(format: "%.1fK", Double(vol) / 1_000)
+        } else {
+            positions[index].volume = "\(vol)"
         }
     }
 

@@ -10,9 +10,10 @@ struct AppTheme {
     let accent: Color
     let positive: Color
     let negative: Color
+    let surfaceTinted: Color
 
     static let light = AppTheme(
-        background: Color(red: 0.957, green: 0.949, blue: 0.933),  // oklch(0.985 0.004 85) ≈ #F4F2EE
+        background: Color(red: 0.88, green: 0.87, blue: 0.93),      // darker purple tint
         surface: .white,
         border: Color(red: 0.878, green: 0.871, blue: 0.863),      // oklch(0.92 0.004 85)
         text: Color(red: 0.067, green: 0.067, blue: 0.067),        // #111
@@ -20,7 +21,8 @@ struct AppTheme {
         faint: Color(red: 0.58, green: 0.57, blue: 0.56),          // oklch(0.65 0.005 85)
         accent: Color(red: 0.48, green: 0.44, blue: 0.30),         // oklch(0.55 0.08 75)
         positive: Color(red: 0.15, green: 0.50, blue: 0.22),       // oklch(0.52 0.12 145)
-        negative: Color(red: 0.58, green: 0.15, blue: 0.12)        // oklch(0.52 0.14 25)
+        negative: Color(red: 0.58, green: 0.15, blue: 0.12),       // oklch(0.52 0.14 25)
+        surfaceTinted: Color(red: 0.94, green: 0.93, blue: 0.97)    // light purple (matches old background)
     )
 
     static let dark = AppTheme(
@@ -32,7 +34,8 @@ struct AppTheme {
         faint: Color(white: 0.92, opacity: 0.3),                   // rgba(235,235,245,0.3)
         accent: Color(red: 0.72, green: 0.65, blue: 0.42),         // oklch(0.75 0.09 75)
         positive: Color(red: 0.35, green: 0.72, blue: 0.40),       // oklch(0.72 0.14 145)
-        negative: Color(red: 0.72, green: 0.35, blue: 0.30)        // oklch(0.68 0.14 25)
+        negative: Color(red: 0.72, green: 0.35, blue: 0.30),       // oklch(0.68 0.14 25)
+        surfaceTinted: Color(red: 0.15, green: 0.15, blue: 0.16)    // slightly lighter than surface
     )
 
     static func current(for colorScheme: ColorScheme) -> AppTheme {

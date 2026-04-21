@@ -3,6 +3,7 @@ import Foundation
 struct StockQuote {
     let symbol: String
     let price: Double
+    let previousClose: Double
     let pctChange: Double
     let dayHigh: Double
     let dayLow: Double
@@ -70,10 +71,20 @@ class StockService {
             sparkData = closes.compactMap { $0 }
         }
 
+        // Use actual yesterday's close (second-to-last in the closes array)
+        let yesterdayClose: Double
+        if sparkData.count >= 2 {
+            yesterdayClose = sparkData[sparkData.count - 2]
+        } else {
+            yesterdayClose = prevClose
+        }
+        let actualPctChange = yesterdayClose > 0 ? ((price - yesterdayClose) / yesterdayClose) * 100.0 : 0
+
         return StockQuote(
             symbol: ticker,
             price: price,
-            pctChange: pctChange,
+            previousClose: yesterdayClose,
+            pctChange: actualPctChange,
             dayHigh: dayHigh,
             dayLow: dayLow,
             high52w: high52w,

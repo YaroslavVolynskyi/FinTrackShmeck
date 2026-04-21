@@ -9,6 +9,7 @@ struct StockPosition: Identifiable, Codable {
     var field: String
     var aum: String
     var mcap: String
+    var previousClose: Double
     var pctChange: Double
     var dayHigh: Double
     var dayLow: Double
@@ -22,7 +23,7 @@ struct StockPosition: Identifiable, Codable {
 
     init(
         ticker: String = "", name: String = "", price: Double = 0, shares: Double = 0,
-        field: String = "", aum: String = "—", mcap: String = "—", pctChange: Double = 0,
+        field: String = "", aum: String = "—", mcap: String = "—", previousClose: Double = 0, pctChange: Double = 0,
         dayHigh: Double = 0, dayLow: Double = 0, high52w: Double = 0, low52w: Double = 0,
         volume: String = "—", pe: Double = 0, divYield: String = "—", costBasis: Double = 0,
         sparkData: [Double] = [20,20,20,20,20,20,20,20,20,20,20,20]
@@ -35,6 +36,7 @@ struct StockPosition: Identifiable, Codable {
         self.field = field
         self.aum = aum
         self.mcap = mcap
+        self.previousClose = previousClose
         self.pctChange = pctChange
         self.dayHigh = dayHigh
         self.dayLow = dayLow
