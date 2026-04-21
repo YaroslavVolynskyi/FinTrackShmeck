@@ -50,3 +50,9 @@ FinTrackShmeck/seed_data.json
 
 # Firebase config (contains API keys)
 FinTrackShmeck/GoogleService-Info.plist
+
+# Firebase
+.firebaserc
+firebase-debug.log
+functions/venv/
+functions/__pycache__/
