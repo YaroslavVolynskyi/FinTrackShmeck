@@ -3,17 +3,44 @@ import SwiftUI
 
 @Observable
 class PortfolioViewModel {
-    var positions: [StockPosition] = PortfolioViewModel.makeSeedData()
+    var positions: [StockPosition] = []
     var isRefreshing = false
     var tickerError: String?
     var focusedTickerID: UUID?
+    var triggeredAlerts: [String: Bool] = [:]  // ticker -> isBuy
     private var errorTickerID: UUID?
+    private var notificationObserver: Any?
 
     var hasEmptyTicker: Bool {
         positions.contains { $0.ticker.isEmpty }
     }
 
     private var refreshTask: Task<Void, Never>?
+
+    private static var savedURL: URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return docs.appendingPathComponent("positions.json")
+    }
+
+    init() {
+        positions = Self.loadPositions()
+        notificationObserver = NotificationCenter.default.addObserver(
+            forName: .priceAlertReceived, object: nil, queue: .main
+        ) { [weak self] notification in
+            self?.handlePriceAlert(notification.userInfo)
+        }
+    }
+
+    private func handlePriceAlert(_ userInfo: [AnyHashable: Any]?) {
+        guard let ticker = userInfo?["ticker"] as? String,
+              let typeStr = userInfo?["alertType"] as? String else { return }
+        let isBuy = typeStr == "buy"
+        triggeredAlerts[ticker] = isBuy
+        // Auto-clear after 4 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
+            self?.triggeredAlerts.removeValue(forKey: ticker)
+        }
+    }
 
     var totalValue: Double {
         positions.reduce(0) { $0 + $1.price * $1.shares }
@@ -33,11 +60,22 @@ class PortfolioViewModel {
 
     func deletePosition(at index: Int) {
         guard positions.indices.contains(index) else { return }
+        let ticker = positions[index].ticker
         positions.remove(at: index)
+        save()
+        if !ticker.isEmpty {
+            FirebaseService.shared.removeAlert(ticker: ticker)
+        }
     }
 
     func onEdit() {
+        save()
+        syncToFirebase()
         scheduleRefresh()
+    }
+
+    func syncToFirebase() {
+        FirebaseService.shared.syncAlerts(positions: positions)
     }
 
     func sortByValue() {
@@ -59,7 +97,7 @@ class PortfolioViewModel {
             let quotes = await StockService.shared.fetchQuotes(for: [ticker])
             if let quote = quotes[ticker] {
                 applyQuote(quote, at: index)
-
+                save()
                 await fetchAllPrices()
             } else {
                 errorTickerID = positions[index].id
@@ -106,6 +144,7 @@ class PortfolioViewModel {
             applyQuote(quote, at: i)
         }
         sortByValue()
+        save()
     }
 
     private func applyQuote(_ quote: StockQuote, at index: Int) {
@@ -132,7 +171,22 @@ class PortfolioViewModel {
         }
     }
 
-    static func makeSeedData() -> [StockPosition] {
+    // MARK: - Persistence
+
+    func save() {
+        let validPositions = positions.filter { !$0.ticker.isEmpty }
+        guard let data = try? JSONEncoder().encode(validPositions) else { return }
+        try? data.write(to: Self.savedURL)
+    }
+
+    private static func loadPositions() -> [StockPosition] {
+        // Try loading saved data first
+        if let data = try? Data(contentsOf: savedURL),
+           let positions = try? JSONDecoder().decode([StockPosition].self, from: data),
+           !positions.isEmpty {
+            return positions
+        }
+        // Fall back to seed data
         guard let url = Bundle.main.url(forResource: "seed_data", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let positions = try? JSONDecoder().decode([StockPosition].self, from: data)

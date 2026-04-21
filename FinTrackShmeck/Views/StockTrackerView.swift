@@ -9,8 +9,8 @@ struct StockTrackerView: View {
     }
 
     private let tickerWidth: CGFloat = 90
-    private let colWidths: [CGFloat] = [82, 72, 90, 100, 120, 80, 86]
-    // Columns: Price, Qty, Value, Day G/L, Description, AUM, Mkt Cap
+    private let colWidths: [CGFloat] = [82, 72, 90, 100, 120, 80, 86, 82, 82]
+    // Columns: Price, Qty, Value, Day G/L, Description, AUM, Mkt Cap, Buy At, Sell At
     private let rowHeight: CGFloat = 48
     private let headerHeight: CGFloat = 32
     @State private var hOffset: CGFloat = 0
@@ -95,6 +95,11 @@ struct StockTrackerView: View {
                     VStack(spacing: 0) {
                         ForEach(Array(viewModel.positions.enumerated()), id: \.element.id) { index, _ in
                             stickyTickerDataCell(index: index)
+                                .modifier(BlinkModifier(
+                                    alertInfo: viewModel.triggeredAlerts[viewModel.positions[index].ticker],
+                                    positiveColor: theme.positive,
+                                    negativeColor: theme.negative
+                                ))
                         }
                         if !viewModel.hasEmptyTicker {
                             newRowTickerCell
@@ -171,6 +176,10 @@ struct StockTrackerView: View {
             headerCell("AUM", width: colWidths[5])
             divider()
             headerCell("Mkt Cap", width: colWidths[6])
+            divider()
+            headerCell("Buy At", width: colWidths[7])
+            divider()
+            headerCell("Sell At", width: colWidths[8])
         }
         .frame(height: headerHeight)
         .overlay(alignment: .bottom) {
@@ -239,6 +248,30 @@ struct StockTrackerView: View {
                 onCommit: { viewModel.positions[index].mcap = $0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.text,
                 width: colWidths[6], theme: theme
+            )
+
+            divider()
+            EditableCellView(
+                value: pos.desiredBuyPrice.map { "$" + String(format: "%.2f", $0) } ?? "",
+                onCommit: {
+                    let val = Double($0.replacingOccurrences(of: "$", with: ""))
+                    viewModel.positions[index].desiredBuyPrice = val
+                    viewModel.onEdit()
+                },
+                alignment: .center, isMono: true, color: theme.positive,
+                placeholder: "—", width: colWidths[7], theme: theme
+            )
+
+            divider()
+            EditableCellView(
+                value: pos.requiredSellPrice.map { "$" + String(format: "%.2f", $0) } ?? "",
+                onCommit: {
+                    let val = Double($0.replacingOccurrences(of: "$", with: ""))
+                    viewModel.positions[index].requiredSellPrice = val
+                    viewModel.onEdit()
+                },
+                alignment: .center, isMono: true, color: theme.negative,
+                placeholder: "—", width: colWidths[8], theme: theme
             )
         }
         .frame(height: rowHeight)

@@ -47,3 +47,6 @@ Thumbs.db
 
 # Seed data (contains personal portfolio)
 FinTrackShmeck/seed_data.json
+
+# Firebase config (contains API keys)
+FinTrackShmeck/GoogleService-Info.plist

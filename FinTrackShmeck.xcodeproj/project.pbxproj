@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		12396E7F9AC3D431826803F5 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = B7179B74056D64BC9A982D26 /* FirebaseCore */; };
 		12C0C78E3AEAC77C93002F17 /* StockPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8A975B4EBE967C38C39DA /* StockPosition.swift */; };
+		1C967E4DD84DEFF9FCE77BF7 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 52756031773585B67CA89C17 /* GoogleService-Info.plist */; };
 		253EFE81992249391B23A7B3 /* PortfolioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA76F7F434185E7A59D61127 /* PortfolioViewModel.swift */; };
 		2A1CBA78A170F159805700DE /* TickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB49B29E7454AC16602809AE /* TickerCell.swift */; };
 		35ABE82C912B394894F832C9 /* ObservableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF88B2D8595F09111B7941E6 /* ObservableScrollView.swift */; };
@@ -19,6 +21,10 @@
 		C360A621378253EC0EC72FAB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD1E30D6A36E462F09C66FC /* Theme.swift */; };
 		C7911AADCEA4A9D49E50A2FF /* seed_data.json in Resources */ = {isa = PBXBuildFile; fileRef = 1084ADC8A7E47927C9881E96 /* seed_data.json */; };
 		D59F201C69D4F305408B6AA1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1F1BB10B62A728F87AEA4163 /* Assets.xcassets */; };
+		E3A0CABB7F3F071EE456B489 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 992413FA4F9E74169D60BC84 /* FirebaseMessaging */; };
+		EE29DC77D5B68E209DB5B464 /* BlinkModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DD773AC41EDF2101B4610B /* BlinkModifier.swift */; };
+		F6B9466F30870A68773BBF3B /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF94883C98BC79C7F7EFF0B5 /* FirebaseService.swift */; };
+		FE499D706496A093B77F57B0 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = D943D66D8E413CB36B569543 /* FirebaseFirestore */; };
 		FF03409D3FD6A67E4A80F284 /* FinTrackShmeckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D2FFB7F010D793D1A8CD48 /* FinTrackShmeckApp.swift */; };
 /* End PBXBuildFile section */
 
@@ -29,21 +35,39 @@
 		2679C66262F936DCCE658BDF /* StockTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockTrackerView.swift; sourceTree = "<group>"; };
 		3DD2B27FD57EE6A0D3301FC9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		46D2FFB7F010D793D1A8CD48 /* FinTrackShmeckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinTrackShmeckApp.swift; sourceTree = "<group>"; };
+		52756031773585B67CA89C17 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		6A088203633FA14336466BC6 /* FinTrackShmeck.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FinTrackShmeck.entitlements; sourceTree = "<group>"; };
 		738904DC1256CFD232E54E4E /* .gitignore */ = {isa = PBXFileReference; path = .gitignore; sourceTree = "<group>"; };
 		82C4EB0A9B33FAB9AC47EA85 /* FinTrackShmeck.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FinTrackShmeck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		98AA0055EAE4FDF60F1440C0 /* StockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockService.swift; sourceTree = "<group>"; };
+		A3DD773AC41EDF2101B4610B /* BlinkModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlinkModifier.swift; sourceTree = "<group>"; };
 		A76F748964CBEC1CDFD5571C /* EditableCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableCellView.swift; sourceTree = "<group>"; };
 		A9B8A975B4EBE967C38C39DA /* StockPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockPosition.swift; sourceTree = "<group>"; };
 		AF88B2D8595F09111B7941E6 /* ObservableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableScrollView.swift; sourceTree = "<group>"; };
 		BDD1E30D6A36E462F09C66FC /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		CF94883C98BC79C7F7EFF0B5 /* FirebaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
 		DA76F7F434185E7A59D61127 /* PortfolioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioViewModel.swift; sourceTree = "<group>"; };
 		DB49B29E7454AC16602809AE /* TickerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TickerCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		09EF09382752EA5D0C32DB23 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				12396E7F9AC3D431826803F5 /* FirebaseCore in Frameworks */,
+				FE499D706496A093B77F57B0 /* FirebaseFirestore in Frameworks */,
+				E3A0CABB7F3F071EE456B489 /* FirebaseMessaging in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		1224D83CAE9EB46802FE302C /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				CF94883C98BC79C7F7EFF0B5 /* FirebaseService.swift */,
 				DA76F7F434185E7A59D61127 /* PortfolioViewModel.swift */,
 				A9B8A975B4EBE967C38C39DA /* StockPosition.swift */,
 				98AA0055EAE4FDF60F1440C0 /* StockService.swift */,
@@ -71,6 +95,7 @@
 		934180A17E27EC3B7F2D8798 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A3DD773AC41EDF2101B4610B /* BlinkModifier.swift */,
 				A76F748964CBEC1CDFD5571C /* EditableCellView.swift */,
 				AF88B2D8595F09111B7941E6 /* ObservableScrollView.swift */,
 				1F7F736DF83032253DDCE439 /* SparklineView.swift */,
@@ -92,7 +117,9 @@
 			isa = PBXGroup;
 			children = (
 				1F1BB10B62A728F87AEA4163 /* Assets.xcassets */,
+				6A088203633FA14336466BC6 /* FinTrackShmeck.entitlements */,
 				46D2FFB7F010D793D1A8CD48 /* FinTrackShmeckApp.swift */,
+				52756031773585B67CA89C17 /* GoogleService-Info.plist */,
 				1084ADC8A7E47927C9881E96 /* seed_data.json */,
 				1224D83CAE9EB46802FE302C /* Models */,
 				98BCB4139DDBAAD79B7EE08A /* Preview Content */,
@@ -119,6 +146,7 @@
 			buildPhases = (
 				B260099DF54616E8892EE2F3 /* Sources */,
 				4510BD294DD5CABAE7916F7A /* Resources */,
+				09EF09382752EA5D0C32DB23 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -126,6 +154,9 @@
 			);
 			name = FinTrackShmeck;
 			packageProductDependencies = (
+				B7179B74056D64BC9A982D26 /* FirebaseCore */,
+				D943D66D8E413CB36B569543 /* FirebaseFirestore */,
+				992413FA4F9E74169D60BC84 /* FirebaseMessaging */,
 			);
 			productName = FinTrackShmeck;
 			productReference = 82C4EB0A9B33FAB9AC47EA85 /* FinTrackShmeck.app */;
@@ -155,6 +186,9 @@
 			);
 			mainGroup = 378BDF8F710DE86608136B2B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EA02353B99732E98D33A5962 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A9781002F9B4A2844225482B /* Products */;
 			projectDirPath = "";
@@ -171,6 +205,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D59F201C69D4F305408B6AA1 /* Assets.xcassets in Resources */,
+				1C967E4DD84DEFF9FCE77BF7 /* GoogleService-Info.plist in Resources */,
 				93237A6D962E7EABB2CB1643 /* Preview Assets.xcassets in Resources */,
 				C7911AADCEA4A9D49E50A2FF /* seed_data.json in Resources */,
 			);
@@ -183,8 +218,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE29DC77D5B68E209DB5B464 /* BlinkModifier.swift in Sources */,
 				40CA849E4BA62B4C94281658 /* EditableCellView.swift in Sources */,
 				FF03409D3FD6A67E4A80F284 /* FinTrackShmeckApp.swift in Sources */,
+				F6B9466F30870A68773BBF3B /* FirebaseService.swift in Sources */,
 				35ABE82C912B394894F832C9 /* ObservableScrollView.swift in Sources */,
 				253EFE81992249391B23A7B3 /* PortfolioViewModel.swift in Sources */,
 				4244EB39722C393313BE9739 /* SparklineView.swift in Sources */,
@@ -203,6 +240,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = FinTrackShmeck/FinTrackShmeck.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -349,6 +387,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = FinTrackShmeck/FinTrackShmeck.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -394,6 +433,35 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		EA02353B99732E98D33A5962 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		992413FA4F9E74169D60BC84 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA02353B99732E98D33A5962 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		B7179B74056D64BC9A982D26 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA02353B99732E98D33A5962 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		D943D66D8E413CB36B569543 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA02353B99732E98D33A5962 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3F81F3EF208CC68AC5D9D788 /* Project object */;
 }
