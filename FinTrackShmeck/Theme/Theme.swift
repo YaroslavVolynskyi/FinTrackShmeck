@@ -19,7 +19,7 @@ struct AppTheme {
         text: Color(red: 0.067, green: 0.067, blue: 0.067),        // #111
         muted: Color(red: 0.38, green: 0.37, blue: 0.36),          // oklch(0.45 0.008 85)
         faint: Color(red: 0.58, green: 0.57, blue: 0.56),          // oklch(0.65 0.005 85)
-        accent: Color(red: 0.48, green: 0.44, blue: 0.30),         // oklch(0.55 0.08 75)
+        accent: Color(red: 0.40, green: 0.25, blue: 0.58),         // dark purple
         positive: Color(red: 0.15, green: 0.50, blue: 0.22),       // oklch(0.52 0.12 145)
         negative: Color(red: 0.58, green: 0.15, blue: 0.12),       // oklch(0.52 0.14 25)
         surfaceTinted: Color(red: 0.94, green: 0.93, blue: 0.97)    // light purple (matches old background)

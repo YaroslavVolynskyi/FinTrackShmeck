@@ -1,6 +1,15 @@
 import Foundation
 import SwiftUI
 
+enum SortColumn: String, Codable {
+    case ticker, price, quantity, value, dayGL, description, aum, mcap, buyAt, sellAt
+}
+
+enum SortDirection: String, Codable {
+    case ascending, descending
+    var toggled: SortDirection { self == .ascending ? .descending : .ascending }
+}
+
 @Observable
 class PortfolioViewModel {
     var positions: [StockPosition] = []
@@ -8,6 +17,8 @@ class PortfolioViewModel {
     var tickerError: String?
     var focusedTickerID: UUID?
     var triggeredAlerts: [String: Bool] = [:]  // ticker -> isBuy
+    var sortColumn: SortColumn = .value
+    var sortDirection: SortDirection = .descending
     private var errorTickerID: UUID?
     private var notificationObserver: Any?
 
@@ -25,6 +36,10 @@ class PortfolioViewModel {
 
     init() {
         initialInvestment = UserDefaults.standard.double(forKey: "initialInvestment")
+        if let colRaw = UserDefaults.standard.string(forKey: "sortColumn"),
+           let col = SortColumn(rawValue: colRaw) { sortColumn = col }
+        if let dirRaw = UserDefaults.standard.string(forKey: "sortDirection"),
+           let dir = SortDirection(rawValue: dirRaw) { sortDirection = dir }
         positions = Self.loadPositions()
         notificationObserver = NotificationCenter.default.addObserver(
             forName: .priceAlertReceived, object: nil, queue: .main
@@ -106,13 +121,46 @@ class PortfolioViewModel {
         FirebaseService.shared.syncAlerts(positions: positions)
     }
 
-    func sortByValue() {
-        let sorted = positions.sorted { ($0.price * $0.shares) > ($1.price * $1.shares) }
+    func toggleSort(column: SortColumn) {
+        if sortColumn == column {
+            sortDirection = sortDirection.toggled
+        } else {
+            sortColumn = column
+            sortDirection = .descending
+        }
+        saveSortState()
+        applySort()
+    }
+
+    func applySort() {
+        let col = sortColumn
+        let desc = sortDirection == .descending
+        let sorted = positions.sorted { a, b in
+            let result: Bool
+            switch col {
+            case .ticker: result = a.ticker < b.ticker
+            case .price: result = a.price < b.price
+            case .quantity: result = a.shares < b.shares
+            case .value: result = (a.price * a.shares) < (b.price * b.shares)
+            case .dayGL: result = ((a.price - a.previousClose) * a.shares) < ((b.price - b.previousClose) * b.shares)
+            case .description: result = a.field < b.field
+            case .aum: result = a.aum < b.aum
+            case .mcap: result = a.mcap < b.mcap
+            case .buyAt: result = (a.desiredBuyPrice ?? 0) < (b.desiredBuyPrice ?? 0)
+            case .sellAt: result = (a.requiredSellPrice ?? 0) < (b.requiredSellPrice ?? 0)
+            }
+            return desc ? !result : result
+        }
         if sorted.map(\.id) != positions.map(\.id) {
             withAnimation(.easeInOut(duration: 0.3)) {
                 positions = sorted
             }
         }
+    }
+
+    private func saveSortState() {
+        UserDefaults.standard.set(sortColumn.rawValue, forKey: "sortColumn")
+        UserDefaults.standard.set(sortDirection.rawValue, forKey: "sortDirection")
     }
 
     func validateAndRefreshTicker(at index: Int) {
@@ -171,7 +219,7 @@ class PortfolioViewModel {
             guard let quote = quotes[positions[i].ticker] else { continue }
             applyQuote(quote, at: i)
         }
-        sortByValue()
+        applySort()
         save()
     }
 

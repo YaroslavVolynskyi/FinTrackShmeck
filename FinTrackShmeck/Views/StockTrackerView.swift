@@ -10,8 +10,9 @@ struct StockTrackerView: View {
     }
 
     private let tickerWidth: CGFloat = 90
-    private let colWidths: [CGFloat] = [82, 72, 90, 100, 120, 80, 86, 82, 82]
-    // Columns: Price, Qty, Value, Day G/L, Description, AUM, Mkt Cap, Buy At, Sell At
+    private let colWidths: [CGFloat] = [82, 95, 90, 100, 120, 80, 86, 82, 82]
+    // Columns: Price, Quantity, Value, Day G/L, Description, AUM, Mkt Cap, Buy At, Sell At
+    // Note: Quantity width (95) fits "Quantity ▼" header text with padding
     private let rowHeight: CGFloat = 48
     private let headerHeight: CGFloat = 32
     @State private var hOffset: CGFloat = 0
@@ -57,8 +58,8 @@ struct StockTrackerView: View {
 
             HStack(alignment: .top) {
                 Text("$\(formatMoney(viewModel.totalValue))")
-                    .font(.system(size: 32, weight: .semibold, design: .monospaced))
-                    .foregroundColor(theme.text)
+                    .font(.system(size: 29, weight: .semibold, design: .monospaced))
+                    .foregroundColor(Color(red: 0.30, green: 0.18, blue: 0.45))
                     .tracking(-0.8)
 
                 Spacer()
@@ -213,10 +214,21 @@ struct StockTrackerView: View {
     // MARK: - Sticky Header Cell
 
     private func stickyHeaderCell(_ title: String) -> some View {
-        Text(title)
-            .font(.system(size: 13, weight: .semibold, design: .monospaced))
-            .foregroundColor(theme.text)
-            .frame(width: tickerWidth, height: headerHeight)
+        HStack(spacing: 2) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundColor(viewModel.sortColumn == .ticker ? theme.accent : theme.text)
+            if viewModel.sortColumn == .ticker {
+                Image(systemName: viewModel.sortDirection == .descending ? "chevron.down" : "chevron.up")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(theme.accent)
+            }
+        }
+        .frame(width: tickerWidth, height: headerHeight)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            viewModel.toggleSort(column: .ticker)
+        }
     }
 
     // MARK: - Sticky Ticker Data Cell
@@ -253,23 +265,23 @@ struct StockTrackerView: View {
     private var scrollableHeaderRow: some View {
         HStack(spacing: 0) {
             divider()
-            headerCell("Price", width: colWidths[0])
+            headerCell("Price", width: colWidths[0], column: .price)
             divider()
-            headerCell("Qty", width: colWidths[1])
+            headerCell("Quantity", width: colWidths[1], column: .quantity)
             divider()
-            headerCell("Value", width: colWidths[2])
+            headerCell("Value", width: colWidths[2], column: .value)
             divider()
-            headerCell("Day G/L", width: colWidths[3])
+            headerCell("Day G/L", width: colWidths[3], column: .dayGL)
             divider()
-            headerCell("Description", width: colWidths[4])
+            headerCell("Desc", width: colWidths[4], column: .description)
             divider()
-            headerCell("AUM", width: colWidths[5])
+            headerCell("AUM", width: colWidths[5], column: .aum)
             divider()
-            headerCell("Mkt Cap", width: colWidths[6])
+            headerCell("Mkt Cap", width: colWidths[6], column: .mcap)
             divider()
-            headerCell("Buy At", width: colWidths[7])
+            headerCell("Buy At", width: colWidths[7], column: .buyAt)
             divider()
-            headerCell("Sell At", width: colWidths[8])
+            headerCell("Sell At", width: colWidths[8], column: .sellAt)
         }
         .frame(height: headerHeight)
         .overlay(alignment: .bottom) {
@@ -277,11 +289,24 @@ struct StockTrackerView: View {
         }
     }
 
-    private func headerCell(_ title: String, width: CGFloat) -> some View {
-        Text(title)
-            .font(.system(size: 13, weight: .semibold, design: .monospaced))
-            .foregroundColor(theme.text)
-            .frame(width: width, height: headerHeight)
+    private func headerCell(_ title: String, width: CGFloat, column: SortColumn? = nil) -> some View {
+        HStack(spacing: 2) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundColor(column != nil && viewModel.sortColumn == column ? theme.accent : theme.text)
+            if let column, viewModel.sortColumn == column {
+                Image(systemName: viewModel.sortDirection == .descending ? "chevron.down" : "chevron.up")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(theme.accent)
+            }
+        }
+        .frame(width: width, height: headerHeight)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let column {
+                viewModel.toggleSort(column: column)
+            }
+        }
     }
 
     // MARK: - Scrollable Data Row
@@ -306,7 +331,11 @@ struct StockTrackerView: View {
 
             divider()
             EditableCellView(
-                value: String(format: "%.2f", pos.shares),
+                value: {
+                    let s = String(format: "%.5f", pos.shares)
+                    let trimmed = s.replacingOccurrences(of: "0+$", with: "", options: .regularExpression)
+                    return trimmed.hasSuffix(".") ? String(trimmed.dropLast()) : trimmed
+                }(),
                 onCommit: { viewModel.positions[index].shares = Double($0) ?? 0; viewModel.onEdit() },
                 alignment: .center, isMono: true, color: theme.text,
                 width: colWidths[1], theme: theme, numericOnly: true, onEditStart: editStart
