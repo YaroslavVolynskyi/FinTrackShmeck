@@ -9,7 +9,7 @@ struct StockTrackerView: View {
         AppTheme.current(for: colorScheme)
     }
 
-    private let tickerWidth: CGFloat = 90
+    private let tickerWidth: CGFloat = 120
     private let colWidths: [CGFloat] = [82, 95, 90, 100, 120, 80, 86, 82, 82]
     // Columns: Price, Quantity, Value, Day G/L, Description, AUM, Mkt Cap, Buy At, Sell At
     // Note: Quantity width (95) fits "Quantity ▼" header text with padding
@@ -56,7 +56,7 @@ struct StockTrackerView: View {
                 .foregroundColor(theme.muted)
                 .tracking(0.4)
 
-            HStack(alignment: .top) {
+            HStack(alignment: .center) {
                 Text("$\(formatMoney(viewModel.totalValue))")
                     .font(.system(size: 29, weight: .semibold, design: .monospaced))
                     .foregroundColor(Color(red: 0.30, green: 0.18, blue: 0.45))
@@ -106,6 +106,7 @@ struct StockTrackerView: View {
                         Text("initial")
                             .font(.system(size: 13))
                             .foregroundColor(theme.muted)
+                            .frame(width: 38, alignment: .leading)
                     }
 
                     // Total gain/loss
@@ -117,6 +118,7 @@ struct StockTrackerView: View {
                         Text("total")
                             .font(.system(size: 13))
                             .foregroundColor(theme.muted)
+                            .frame(width: 38, alignment: .leading)
                     }
 
                     // Daily P&L
@@ -128,6 +130,7 @@ struct StockTrackerView: View {
                         Text("today")
                             .font(.system(size: 13))
                             .foregroundColor(theme.muted)
+                            .frame(width: 38, alignment: .leading)
                     }
                 }
             }

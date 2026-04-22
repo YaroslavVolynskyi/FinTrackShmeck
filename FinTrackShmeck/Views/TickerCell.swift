@@ -18,53 +18,93 @@ struct TickerCell: View {
     @FocusState private var tickerFocused: Bool
     @FocusState private var nameFocused: Bool
 
+    private var logoURL: URL? {
+        guard !ticker.isEmpty, ticker != "GLD" else { return nil }
+        return URL(string: "https://financialmodelingprep.com/image-stock/\(ticker).png")
+    }
+
+    private var isGold: Bool { ticker == "GLD" }
+
     var body: some View {
-        VStack(spacing: 2) {
-            if isEditingTicker {
-                TextField("TICK", text: $tickerDraft)
-                    .focused($tickerFocused)
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .foregroundColor(theme.text)
-                    .multilineTextAlignment(.center)
-                    .textFieldStyle(.plain)
-                    .textInputAutocapitalization(.characters)
-                    .onSubmit { commitTicker() }
-                    .onChange(of: tickerFocused) { _, focused in
-                        if !focused { commitTicker() }
+        ZStack(alignment: .leading) {
+            // Logo pinned left
+            if !ticker.isEmpty {
+                if isGold {
+                    Text("GLD")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(red: 0.85, green: 0.65, blue: 0.13))
+                        .frame(width: 22, height: 22)
+                        .background(Color(red: 0.85, green: 0.65, blue: 0.13).opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .padding(.leading, 6)
+                } else {
+                    AsyncImage(url: logoURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 22, height: 22)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        default:
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(theme.border)
+                                .frame(width: 22, height: 22)
+                        }
                     }
-            } else {
-                Text(ticker.isEmpty ? "TICK" : ticker)
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .foregroundColor(ticker.isEmpty ? theme.faint : theme.text)
-                    .onTapGesture {
-                        tickerDraft = ticker
-                        isEditingTicker = true
-                        tickerFocused = true
-                    }
+                    .padding(.leading, 6)
+                }
             }
 
-            if isEditingName {
-                TextField("Name", text: $nameDraft)
-                    .focused($nameFocused)
-                    .font(.system(size: 9))
-                    .foregroundColor(theme.muted)
-                    .multilineTextAlignment(.center)
-                    .textFieldStyle(.plain)
-                    .onSubmit { commitName() }
-                    .onChange(of: nameFocused) { _, focused in
-                        if !focused { commitName() }
-                    }
-            } else {
-                Text(name.isEmpty ? "—" : name)
-                    .font(.system(size: 9))
-                    .foregroundColor(theme.muted)
-                    .lineLimit(1)
-                    .onTapGesture {
-                        nameDraft = name
-                        isEditingName = true
-                        nameFocused = true
-                    }
+            // Ticker + Name centered
+            VStack(spacing: 2) {
+                if isEditingTicker {
+                    TextField("TICK", text: $tickerDraft)
+                        .focused($tickerFocused)
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundColor(theme.text)
+                        .multilineTextAlignment(.center)
+                        .textFieldStyle(.plain)
+                        .textInputAutocapitalization(.characters)
+                        .onSubmit { commitTicker() }
+                        .onChange(of: tickerFocused) { _, focused in
+                            if !focused { commitTicker() }
+                        }
+                } else {
+                    Text(ticker.isEmpty ? "TICK" : ticker)
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundColor(ticker.isEmpty ? theme.faint : theme.text)
+                        .onTapGesture {
+                            tickerDraft = ticker
+                            isEditingTicker = true
+                            tickerFocused = true
+                        }
+                }
+
+                if isEditingName {
+                    TextField("Name", text: $nameDraft)
+                        .focused($nameFocused)
+                        .font(.system(size: 9))
+                        .foregroundColor(theme.muted)
+                        .multilineTextAlignment(.center)
+                        .textFieldStyle(.plain)
+                        .onSubmit { commitName() }
+                        .onChange(of: nameFocused) { _, focused in
+                            if !focused { commitName() }
+                        }
+                } else {
+                    Text(name.isEmpty ? "—" : name)
+                        .font(.system(size: 9))
+                        .foregroundColor(theme.muted)
+                        .lineLimit(1)
+                        .onTapGesture {
+                            nameDraft = name
+                            isEditingName = true
+                            nameFocused = true
+                        }
+                }
             }
+            .padding(.leading, ticker.isEmpty ? 0 : 28)
+            .frame(width: width)
         }
         .frame(width: width, height: 48)
         .background(theme.surfaceTinted)
